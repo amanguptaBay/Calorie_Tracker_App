@@ -1,13 +1,13 @@
 import inspect
 import mock_data
 import utilities
-from pymongo.mongo_client import MongoClient
+import data_models
+import data_connector.mongodb as mongodb
 import argparse
 import configparser
 
 config = configparser.ConfigParser()
 config.read("config.ini")
-
 uri = config.get("database", "uri")
 
 parser = argparse.ArgumentParser()
@@ -15,19 +15,9 @@ parser.add_argument("-t", "--test", help="run in test mode", action="store_true"
 args = parser.parse_args()
 
 #Using MongoDB Community as a mock database
-uri = config.get("database", "uri")
-client = MongoClient(uri)
-try:
-    client.admin.command('ping')
-    print("Pinged your deployment. You successfully connected to MongoDB!")
-except Exception as e:
-    print(e)
-
-db = client.get_database("mock_tracker")
-collection = db.get_collection("dailyEntries")
-
-if collection.count_documents({}) == 0:
-    collection.insert_one(mock_data.startingEntry)
+print("Connecting to database... at", uri)
+client = mongodb.MongoClient(uri)
+client._push_mock_data(mock_data.startingEntry)
 
 def app():
     print("App initialized")
@@ -53,15 +43,7 @@ def getDaySummary(user_input):
     """
     Summarized the day's meals by calories
     """
-    data = collection.find_one({"date": mock_data.startingEntry["date"]})
-    meal_calories = (list(collection.aggregate([
-        {"$match": {"date": mock_data.startingEntry["date"]}},
-        {"$unwind": "$meals"},
-        #Brings meals to the top level (we want meals: total calories)
-        {"$replaceRoot": {"newRoot": "$meals"}},
-        #For each meal, keeps only the name and then computes the sum of calories
-        {"$project": {"_id": 0, "name": 1, "calories": {"$sum": "$foods.calories"}}}
-    ])))
+    meal_calories = client.get_daily_calories(mock_data.startingEntry["date"])
     for meal in meal_calories:
         print(f"{meal['name']}: {meal['calories']} calories")
 
@@ -70,7 +52,7 @@ def getFullJournal(user_input):
     """
     Prints the full journal for the day
     """
-    data = collection.find_one({"date": mock_data.startingEntry["date"]})
+    data = client.get_daily_journal(mock_data.startingEntry["date"])
     dailyCalories = 0
     print(f"Journal for {data['date']}")
     for meal in data["meals"]:
@@ -83,6 +65,7 @@ def getFullJournal(user_input):
         print("\n".join(entriesInMeal))
         dailyCalories += totalMealCalories
     print(f"Total Calories: {dailyCalories}")
+
 @utilities.Debug_User_Input("Breakfast Blueberries 1 cup 55")
 def addFoodEntry(user_input):
     """
@@ -98,36 +81,19 @@ def addFoodEntry(user_input):
     quantity = int(quantity)
     calories = int(calories)
     
-    data = collection.find_one({"date": mock_data.startingEntry["date"]})
+    data = client.get_daily_journal(mock_data.startingEntry["date"])
 
     for mealObject in data["meals"]:
         if mealObject["name"] == meal:
             #Insert food into meal
-            mealObject["foods"].append({
-                "name": food,
-                "quantity": quantity,
-                "unit": unit,
-                "calories": calories
-            })
+            mealObject["foods"].append(data_models.Food(food, quantity, unit, calories))
             break
     else:
         #Create meal and insert food into meal
-        data["meals"].append({
-            "name": meal,
-            "foods": []
-        })
-        data["meals"][-1]["foods"].append({
-            "name": food,
-            "quantity": quantity,
-            "unit": unit,
-            "calories": calories
-        })
+        data["meals"].append(data_models.Meal(meal))
+        data["meals"][-1]["foods"].append(data_models.Food(food, quantity, unit, calories))
 
-    pushEvent = collection.update_one({"date": mock_data.startingEntry["date"]}, {"$set": data})
-    if pushEvent.modified_count == 0:
-        print("Error: Server error")
-        print(pushEvent.raw_result)
-        return
+    client.push_daily_jounral(mock_data.startingEntry["date"], data)
 
 def command3(user_input):
     print("Command 3 executed")
