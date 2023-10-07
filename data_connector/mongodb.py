@@ -49,7 +49,7 @@ class MongoClient():
         """
         day_entries = self.db.get_collection("dailyEntries")
         data = day_entries.find_one({"date": date})
-        return data
+        return data_models.DailyEntry(date, data["meals"])
     def push_daily_jounral(self, date, data: data_models.DailyEntry):
         """
             Pushes the daily journal to the database

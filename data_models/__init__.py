@@ -1,36 +1,61 @@
 from typing import Optional
 from typing import List
-import data_models
+from typing import Union
+from enum import Enum
 
-def Food(name: str, quantity: int, unit: str, calories: int):
-    return {
-        "name": name,
-        "quantity": quantity,
-        "unit": unit,
-        "calories": calories
-    }
+class JsonSerializable:
+    def toJson(self):
+        return {k : v.toJson() if isinstance(v, JsonSerializable) else v
+                 for k, v in self.__dict__.items() 
+                 if not k.startswith("_") and not callable(v)}
 
-def Meal(name: str, foods: List[data_models.Food] = []):
-    return {
-        "name": name,
-        "foods":  foods
-    }
+class Food (JsonSerializable): 
+    def __init__(self, name: str, quantity: int, unit: str, calories: int):
+        self.name = name
+        self.quantity = quantity
+        self.unit = unit
+        self.calories = calories
+    @classmethod
+    def from_object(self, food: dict):
+        return Food(food["name"], food["quantity"], food["unit"], food["calories"])
 
-def addFoodToMeal(meal: data_models.Meal, food: data_models.Food):
-    meal["foods"].append(food)
+class MealEntryType(Enum):
+    FOOD = 0
+    MEAL = 1
 
-def DailyEntry(date: str, meals: List[data_models.Meal] = []):
-    return {
-        "date": date,
-        "meals": meals
-    }
+class MealEntry (JsonSerializable):
+    def __init__(self, type: [""], foodOrMeal: Union[Food, "Meal"]):
+        self.type = type
+        if self.type == MealEntryType.FOOD or self.type == MealEntryType.FOOD.name:
+            self.food = Food.from_object(foodOrMeal)
+        else:
+            pass
+    @classmethod
+    def from_object(self, mealEntryDict: dict):
+        return MealEntry(mealEntryDict["type"], mealEntryDict)
 
-def getMealByName(dailyEntry: data_models.DailyEntry, name: str) -> Optional[data_models.Meal]:
-    for meal in dailyEntry["meals"]:
-        if meal["name"] == name:
-            return meal
-    return None
+class Meal(JsonSerializable):
+    def __init__(self, name: str, mealEntries: List[MealEntry] = []):
+        self.name = name
+        self.mealEntries = [MealEntry.from_object(entry) if not isinstance(entry, MealEntry) else entry for entry in mealEntries]
+    @classmethod
+    def from_object(self, meal: dict):
+        return Meal(meal["name"], meal["entries"])
+    def addMealEntry(self, mealEntry: MealEntry):
+        self.mealEntries.append(mealEntry)
 
-def addMealToDailyEntry(dailyEntry: data_models.DailyEntry, meal: data_models.Meal):
-    dailyEntry["meals"].append(meal)
+class DailyEntry(JsonSerializable):
+    def __init__(self, date: str, meals: List[Meal] = []):
+        self.date = date
+        self.meals = [Meal.from_object(meal) if not isinstance(meal, Meal) else meal for meal in meals]
+    @classmethod
+    def from_object(self, dailyEntry: dict):
+        return DailyEntry(dailyEntry["date"], dailyEntry["meals"])
+    def getMealByName(self, name: str) -> Optional[Meal]:
+        for meal in self.meals:
+            if meal.name == name:
+                return meal
+        return None
+    def addMeal(self, meal: Meal):
+        self.meals.append(meal)
 

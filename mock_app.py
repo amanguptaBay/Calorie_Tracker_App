@@ -54,14 +54,17 @@ def getFullJournal(user_input):
     """
     data = client.get_daily_journal(mock_data.startingEntry["date"])
     dailyCalories = 0
-    print(f"Journal for {data['date']}")
-    for meal in data["meals"]:
+    print(f"Journal for {data.date}")
+    for meal in data.meals:
         entriesInMeal = []
         totalMealCalories = 0
-        for food in meal["foods"]:
-            entriesInMeal.append(f"\t{food['name']}: {food['quantity']} {food['unit']} - {food['calories']} calories")
-            totalMealCalories += food["calories"]
-        print(f"{meal['name']} - {totalMealCalories} calories")
+        for mealEntry in meal.mealEntries:
+            if mealEntry.type != data_models.MealEntryType.FOOD.name:
+                continue
+            food = mealEntry.food
+            entriesInMeal.append(f"\t{food.name}: {food.quantity} {food.unit} - {food.calories} calories")
+            totalMealCalories += food.calories
+        print(f"{meal.name} - {totalMealCalories} calories")
         print("\n".join(entriesInMeal))
         dailyCalories += totalMealCalories
     print(f"Total Calories: {dailyCalories}")
@@ -109,8 +112,8 @@ def error(user_input):
 commands = {
     "help": help,
     "summary": getDaySummary,
-    "add_to_entry": addFoodEntry,
-    "create_entry": createDailyEntry,
+    # "add_to_entry": addFoodEntry,
+    # "create_entry": createDailyEntry,
     "get_entry": getFullJournal,
 }
 if __name__ == "__main__":
