@@ -30,7 +30,7 @@ def app():
         user_input = input("Enter a command: ")
         user_command = user_input.split(" ")[0]
         command_arguments = user_input.split(" ")[1:]
-        if user_command == "quit":
+        if user_command in {"quit", "exit", "exit()"}:
             print("Quitting...")
             break
         else:
@@ -71,25 +71,43 @@ def getFullJournal(user_input):
         for food in meal["foods"]:
             print(f"\t{food['name']}: {food['quantity']} {food['unit']}")
 
-@utilities.Debug_User_Input("Breakfast blueberries 1 cup")
+@utilities.Debug_User_Input("Breakfast Blueberries 1 cup 55")
 def addFoodEntry(user_input):
     """
     Adds a food entry to the journal:
-        Input format <meal> <food> <quantity> <unit>
+        Input format <meal> <food> <quantity> <unit> <calories>
     """
     cmds = user_input.split()
-    if len(cmds) != 4:
+    if len(cmds) != 5:
         print("Error: Invalid command format")
-        print(utilities.tabbedString("Expected Parameters: <meal> <food> <quantity> <unit>", 1))
+        print(utilities.tabbedString("Expected Parameters: <meal> <food> <quantity> <unit> <calories>", 1))
         return
-    meal, food, quantity, unit = cmds
+    meal, food, quantity, unit, calories = cmds
     
     data = collection.find_one({"date": mock_data.startingEntry["date"]})
-    
-    if meal not in data.keys():
-        data[meal] = []
 
-    data[meal].append({"name": food, "quantity": quantity, "unit": unit})
+    for mealObject in data["meals"]:
+        if mealObject["name"] == meal:
+            #Insert food into meal
+            mealObject["foods"].append({
+                "name": food,
+                "quantity": quantity,
+                "unit": unit,
+                "calories": calories
+            })
+            break
+    else:
+        #Create meal and insert food into meal
+        data["meals"].append({
+            "name": meal,
+            "foods": []
+        })
+        data["meals"][-1]["foods"].append({
+            "name": food,
+            "quantity": quantity,
+            "unit": unit,
+            "calories": calories
+        })
 
     pushEvent = collection.update_one({"date": mock_data.startingEntry["date"]}, {"$set": data})
     if pushEvent.modified_count == 0:
