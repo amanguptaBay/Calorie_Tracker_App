@@ -42,11 +42,17 @@ def getDaySummary(user_input):
     Summarized the day's meals by calories
     """
     data = collection.find_one({"date": mock_data.startingEntry["date"]})
-    calories = map(lambda meal: sum(map(lambda foodEntry: foodEntry["calories"], meal["foods"])), data["meals"])
-    calories = list(calories)
-    print("Calories consumed:")
-    for i in range(len(calories)):
-        print(f"{data['meals'][i]['name']}: {calories[i]}")
+    meal_calories = (list(collection.aggregate([
+        {"$match": {"date": mock_data.startingEntry["date"]}},
+        {"$unwind": "$meals"},
+        #Brings meals to the top level (we want meals: total calories)
+        {"$replaceRoot": {"newRoot": "$meals"}},
+        #For each meal, keeps only the name and then computes the sum of calories
+        {"$project": {"_id": 0, "name": 1, "calories": {"$sum": "$foods.calories"}}}
+    ])))
+    for meal in meal_calories:
+        print(f"{meal['name']}: {meal['calories']} calories")
+
 
 def getFullJournal(user_input):
     """
@@ -71,4 +77,8 @@ commands = {
     "command3": command3,
 }
 if __name__ == "__main__":
-    app()
+    for command in commands:
+        print(f"Running {command}")
+        commands[command]('')
+        print()
+    #app()
