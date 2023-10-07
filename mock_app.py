@@ -2,7 +2,11 @@ import inspect
 import mock_data
 import utilities
 from pymongo.mongo_client import MongoClient
+import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-t", "--test", help="run in test mode", action="store_true")
+args = parser.parse_args()
 
 #Using MongoDB Community as a mock database
 uri = "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.0.1"
@@ -79,7 +83,19 @@ def addFoodEntry(user_input):
         print(utilities.tabbedString("Expected Parameters: <meal> <food> <quantity> <unit>", 1))
         return
     meal, food, quantity, unit = cmds
+    
+    data = collection.find_one({"date": mock_data.startingEntry["date"]})
+    
+    if meal not in data.keys():
+        data[meal] = []
 
+    data[meal].append({"name": food, "quantity": quantity, "unit": unit})
+
+    pushEvent = collection.update_one({"date": mock_data.startingEntry["date"]}, {"$set": data})
+    if pushEvent.modified_count == 0:
+        print("Error: Server error")
+        print(pushEvent.raw_result)
+        return
 
 def command3(user_input):
     print("Command 3 executed")
@@ -94,13 +110,17 @@ commands = {
     "help": help,
 }
 if __name__ == "__main__":
-    for command in commands:
-        mock_input = ""
-        try:
-            mock_input = commands[command].debug_user_input
-        except AttributeError:
-            pass
-        print("Executing command:", command)
-        print("Mock input:", mock_input)
-        commands[command](mock_input)
-    # app()
+    if args.test:
+        print("Running in test mode")
+        for command in commands:
+            mock_input = ""
+            try:
+                mock_input = commands[command].debug_user_input
+            except AttributeError:
+                pass
+            print("Executing command:", command)
+            print("Mock input:", mock_input)
+            commands[command](mock_input)
+    else:
+        print("Running in production mode")
+        app()
