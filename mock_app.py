@@ -83,15 +83,12 @@ def addFoodEntry(user_input):
     
     data = client.get_daily_journal(mock_data.startingEntry["date"])
 
-    for mealObject in data["meals"]:
-        if mealObject["name"] == meal:
-            #Insert food into meal
-            mealObject["foods"].append(data_models.Food(food, quantity, unit, calories))
-            break
-    else:
-        #Create meal and insert food into meal
-        data["meals"].append(data_models.Meal(meal))
-        data["meals"][-1]["foods"].append(data_models.Food(food, quantity, unit, calories))
+    mealObject = data_models.getMealByName(data, meal)
+    if mealObject is None:
+        mealObject = data_models.Meal(meal)
+        data_models.addMealToDailyEntry(data, mealObject)
+    foodObject = data_models.Food(food, quantity, unit, calories)
+    data_models.addFoodToMeal(mealObject, foodObject)
 
     client.push_daily_jounral(mock_data.startingEntry["date"], data)
 
