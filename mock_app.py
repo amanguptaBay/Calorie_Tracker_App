@@ -1,5 +1,6 @@
 import inspect
 import mock_data
+import utilities
 from pymongo.mongo_client import MongoClient
 
 
@@ -24,18 +25,19 @@ def app():
     while True:
         user_input = input("Enter a command: ")
         user_command = user_input.split(" ")[0]
+        command_arguments = user_input.split(" ")[1:]
         if user_command == "quit":
             print("Quitting...")
             break
-        if user_command == "help":
-            print("Available commands:")
-            for command in commands:
-                print(f"{command}: {inspect.getdoc(commands[command])}")
-            continue
-        command = commands.get(user_command, error)
-        command(user_input)
+        else:
+            command = commands.get(user_command, error)
+            command(command_arguments)
 
-
+def help(user_input):
+    print("Available commands:")
+    for command in commands:
+        print(f"{command}:")
+        print(utilities.tabbedString(inspect.getdoc(commands[command]), 1))
 
 def getDaySummary(user_input):
     """
@@ -65,6 +67,20 @@ def getFullJournal(user_input):
         for food in meal["foods"]:
             print(f"\t{food['name']}: {food['quantity']} {food['unit']}")
 
+@utilities.Debug_User_Input("Breakfast blueberries 1 cup")
+def addFoodEntry(user_input):
+    """
+    Adds a food entry to the journal:
+        Input format <meal> <food> <quantity> <unit>
+    """
+    cmds = user_input.split()
+    if len(cmds) != 4:
+        print("Error: Invalid command format")
+        print(utilities.tabbedString("Expected Parameters: <meal> <food> <quantity> <unit>", 1))
+        return
+    meal, food, quantity, unit = cmds
+
+
 def command3(user_input):
     print("Command 3 executed")
 
@@ -74,11 +90,17 @@ def error(user_input):
 commands = {
     "dailySummary": getDaySummary,
     "fullJournal": getFullJournal,
-    "command3": command3,
+    "addFoodEntry": addFoodEntry,
+    "help": help,
 }
 if __name__ == "__main__":
     for command in commands:
-        print(f"Running {command}")
-        commands[command]('')
-        print()
-    #app()
+        mock_input = ""
+        try:
+            mock_input = commands[command].debug_user_input
+        except AttributeError:
+            pass
+        print("Executing command:", command)
+        print("Mock input:", mock_input)
+        commands[command](mock_input)
+    # app()
