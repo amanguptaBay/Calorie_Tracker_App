@@ -67,10 +67,13 @@ def getFullJournal(user_input):
     data = collection.find_one({"date": mock_data.startingEntry["date"]})
     print(f"Journal for {data['date']}")
     for meal in data["meals"]:
-        print(f"{meal['name']}:")
+        foodEntries = []
+        totalCalories = 0
         for food in meal["foods"]:
-            print(f"\t{food['name']}: {food['quantity']} {food['unit']}")
-
+            foodEntries.append(f"\t{food['name']}: {food['quantity']} {food['unit']} - {food['calories']} calories")
+            totalCalories += food["calories"]
+        print(f"{meal['name']} - {int(totalCalories)} calories")
+        print("\n".join(foodEntries))
 @utilities.Debug_User_Input("Breakfast Blueberries 1 cup 55")
 def addFoodEntry(user_input):
     """
@@ -83,6 +86,8 @@ def addFoodEntry(user_input):
         print(utilities.tabbedString("Expected Parameters: <meal> <food> <quantity> <unit> <calories>", 1))
         return
     meal, food, quantity, unit, calories = cmds
+    quantity = int(quantity)
+    calories = int(calories)
     
     data = collection.find_one({"date": mock_data.startingEntry["date"]})
 
