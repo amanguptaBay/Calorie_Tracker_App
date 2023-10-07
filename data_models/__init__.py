@@ -10,17 +10,17 @@ def Food(name: str, quantity: int, unit: str, calories: int):
         "calories": calories
     }
 
-def Meal(name: str, foods: Optional[List[data_models.Food]] = None):
+def Meal(name: str, foods: List[data_models.Food] = []):
     return {
         "name": name,
-        "foods":  foods or []
+        "foods":  foods
     }
 
 
-def DailyEntry(date: str, meals: Optional[List[data_models.Meal]] = None):
+def DailyEntry(date: str, meals: List[data_models.Meal] = []):
     return {
         "date": date,
-        "meals": meals or []
+        "meals": meals
     }
 
 
