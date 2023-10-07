@@ -3,13 +3,19 @@ import mock_data
 import utilities
 from pymongo.mongo_client import MongoClient
 import argparse
+import configparser
+
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+uri = config.get("database", "uri")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t", "--test", help="run in test mode", action="store_true")
 args = parser.parse_args()
 
 #Using MongoDB Community as a mock database
-uri = "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.0.1"
+uri = config.get("database", "uri")
 client = MongoClient(uri)
 try:
     client.admin.command('ping')
