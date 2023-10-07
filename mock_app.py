@@ -47,6 +47,21 @@ def getDaySummary(user_input):
     for meal in meal_calories:
         print(f"{meal['name']}: {meal['calories']} calories")
 
+def mealString(meal: data_models.Meal) -> [str, int]:
+    entriesInMeal = []
+    totalMealCalories = 0
+    for mealEntry in meal.entries:
+        if mealEntry.type != data_models.MealEntryType.FOOD:
+            mealOutputString, mealCalories = mealString(mealEntry.object)
+            entriesInMeal.append(utilities.tabbedString(mealOutputString, 1))
+            totalMealCalories += mealCalories
+        food = mealEntry.object
+        entriesInMeal.append(f"\t{food.name}: {food.quantity} {food.unit} - {food.calories} calories")
+        totalMealCalories += food.calories
+    outputString = f"{meal.name} - {totalMealCalories} calories\n"
+    outputString += ("\n".join(entriesInMeal))
+    return outputString, totalMealCalories
+
 
 def getFullJournal(user_input):
     """
@@ -56,17 +71,9 @@ def getFullJournal(user_input):
     dailyCalories = 0
     print(f"Journal for {data.date}")
     for meal in data.meals:
-        entriesInMeal = []
-        totalMealCalories = 0
-        for mealEntry in meal.mealEntries:
-            if mealEntry.type != data_models.MealEntryType.FOOD.name:
-                continue
-            food = mealEntry.food
-            entriesInMeal.append(f"\t{food.name}: {food.quantity} {food.unit} - {food.calories} calories")
-            totalMealCalories += food.calories
-        print(f"{meal.name} - {totalMealCalories} calories")
-        print("\n".join(entriesInMeal))
-        dailyCalories += totalMealCalories
+        output, calories = mealString(meal)
+        print(output)
+        dailyCalories += calories
     print(f"Total Calories: {dailyCalories}")
 
 @utilities.Debug_User_Input("Breakfast Blueberries 1 cup 55")
@@ -84,16 +91,15 @@ def addFoodEntry(user_input):
     quantity = int(quantity)
     calories = int(calories)
     
-    data = client.get_daily_journal(mock_data.startingEntry["date"])
+    entryForDate = client.get_daily_journal(mock_data.startingEntry["date"])
 
-    mealObject = data_models.getMealByName(data, meal)
+    mealObject = entryForDate.getMealByName(meal)
     if mealObject is None:
         mealObject = data_models.Meal(meal)
-        data_models.addMealToDailyEntry(data, mealObject)
     foodObject = data_models.Food(food, quantity, unit, calories)
-    data_models.addFoodToMeal(mealObject, foodObject)
+    mealObject.addMealEntry(data_models.MealEntry(data_models.MealEntryType.FOOD, foodObject))
 
-    client.push_daily_jounral(mock_data.startingEntry["date"], data)
+    client.push_daily_jounral(mock_data.startingEntry["date"], entryForDate)
 
 @utilities.Debug_User_Input("2021-01-01")
 def createDailyEntry(user_input):
@@ -112,7 +118,7 @@ def error(user_input):
 commands = {
     "help": help,
     "summary": getDaySummary,
-    # "add_to_entry": addFoodEntry,
+    "add_to_entry": addFoodEntry,
     # "create_entry": createDailyEntry,
     "get_entry": getFullJournal,
 }

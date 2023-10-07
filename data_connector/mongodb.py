@@ -55,7 +55,7 @@ class MongoClient():
             Pushes the daily journal to the database
         """
         day_entries = self.db.get_collection("dailyEntries")
-        pushEvent = day_entries.update_one({"date": date}, {"$set": data})
+        pushEvent = day_entries.update_one({"date": date}, {"$set": data.toJson()})
         if pushEvent.modified_count == 0:
             print("Error: Server error")
             print(pushEvent.raw_result)

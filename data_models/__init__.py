@@ -5,7 +5,10 @@ from enum import Enum
 
 class JsonSerializable:
     def toJson(self):
-        return {k : v.toJson() if isinstance(v, JsonSerializable) else v
+        return {k : v.toJson() 
+                if isinstance(v, JsonSerializable) 
+                else [entry.toJson() for entry in v] if isinstance(v, list) and isinstance(v[0], JsonSerializable) else v
+                
                  for k, v in self.__dict__.items() 
                  if not k.startswith("_") and not callable(v)}
 
@@ -17,6 +20,8 @@ class Food (JsonSerializable):
         self.calories = calories
     @classmethod
     def from_object(self, food: dict):
+        if isinstance(food, Food):
+            return food
         return Food(food["name"], food["quantity"], food["unit"], food["calories"])
 
 class MealEntryType(Enum):
@@ -25,24 +30,34 @@ class MealEntryType(Enum):
 
 class MealEntry (JsonSerializable):
     def __init__(self, type: [""], foodOrMeal: Union[Food, "Meal"]):
-        self.type = type
+        self.type = MealEntryType[type] if isinstance(type, str) else type
         if self.type == MealEntryType.FOOD or self.type == MealEntryType.FOOD.name:
-            self.food = Food.from_object(foodOrMeal)
+            self.object = Food.from_object(foodOrMeal)
         else:
-            pass
+            self.object = Meal.from_object(foodOrMeal)
     @classmethod
     def from_object(self, mealEntryDict: dict):
+        if isinstance(mealEntryDict, MealEntry):
+            return MealEntry(mealEntryDict["type"], mealEntryDict["object"])
         return MealEntry(mealEntryDict["type"], mealEntryDict)
+    def toJson(self):
+        output = {
+            "type": self.type.name,
+        }
+        output.update(self.object.toJson())
+        return output
 
 class Meal(JsonSerializable):
-    def __init__(self, name: str, mealEntries: List[MealEntry] = []):
+    def __init__(self, name: str, entries: List[MealEntry] = []):
         self.name = name
-        self.mealEntries = [MealEntry.from_object(entry) if not isinstance(entry, MealEntry) else entry for entry in mealEntries]
+        self.entries = [MealEntry.from_object(entry) if not isinstance(entry, MealEntry) else entry for entry in entries]
     @classmethod
     def from_object(self, meal: dict):
+        if isinstance(meal, Meal):
+            return meal
         return Meal(meal["name"], meal["entries"])
-    def addMealEntry(self, mealEntry: MealEntry):
-        self.mealEntries.append(mealEntry)
+    def addMealEntry(self, entry: MealEntry):
+        self.entries.append(entry)
 
 class DailyEntry(JsonSerializable):
     def __init__(self, date: str, meals: List[Meal] = []):
@@ -50,6 +65,8 @@ class DailyEntry(JsonSerializable):
         self.meals = [Meal.from_object(meal) if not isinstance(meal, Meal) else meal for meal in meals]
     @classmethod
     def from_object(self, dailyEntry: dict):
+        if isinstance(dailyEntry, DailyEntry):
+            return dailyEntry
         return DailyEntry(dailyEntry["date"], dailyEntry["meals"])
     def getMealByName(self, name: str) -> Optional[Meal]:
         for meal in self.meals:
