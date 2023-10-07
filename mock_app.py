@@ -95,17 +95,26 @@ def addFoodEntry(user_input):
 
     client.push_daily_jounral(mock_data.startingEntry["date"], data)
 
-def command3(user_input):
-    print("Command 3 executed")
+@utilities.Debug_User_Input("2021-01-01")
+def createDailyEntry(user_input):
+    """
+        Creates a new daily entry: <date>
+    """
+    if user_input == "":
+        print("Error: No date provided")
+        return
+    date = user_input
+    data = client.create_daily_journal(date)
 
 def error(user_input):
     print("Error: Command not recognized")
 
 commands = {
-    "dailySummary": getDaySummary,
-    "fullJournal": getFullJournal,
-    "addFoodEntry": addFoodEntry,
     "help": help,
+    "summary": getDaySummary,
+    "add_to_entry": addFoodEntry,
+    "create_entry": createDailyEntry,
+    "get_entry": getFullJournal,
 }
 if __name__ == "__main__":
     if args.test:

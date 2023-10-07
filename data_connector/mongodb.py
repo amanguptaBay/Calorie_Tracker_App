@@ -13,9 +13,10 @@ class MongoClient():
         self.db = client.get_database("mock_tracker")
     def _push_mock_data(self, mock_data: data_models.DailyEntry):
         """
-            If database is empty, push mock data
+            Push mock data to the database
         """
         day_entries = self.db.get_collection("dailyEntries")
+        day_entries.delete_many({})
         if day_entries.count_documents({}) == 0:
             return day_entries.insert_one(mock_data)
     def get_daily_calories(self, date) -> {str: int}:
@@ -32,6 +33,16 @@ class MongoClient():
             #For each meal, keeps only the name and then computes the sum of calories
             {"$project": {"_id": 0, "name": 1, "calories": {"$sum": "$foods.calories"}}}
         ]))
+    def create_daily_journal(self, date):
+        """
+            Creates a new daily journal
+        """
+        day_entries = self.db.get_collection("dailyEntries")
+        data = day_entries.find_one({"date": date})
+        if data is not None:
+            print("Error: Daily journal already exists")
+            return
+        day_entries.insert_one(data_models.DailyEntry(date))
     def get_daily_journal(self, date) -> data_models.DailyEntry:
         """
             Fetches and returns the daily journal
@@ -49,3 +60,4 @@ class MongoClient():
             print("Error: Server error")
             print(pushEvent.raw_result)
             return
+    
