@@ -71,15 +71,18 @@ def getFullJournal(user_input):
     Prints the full journal for the day
     """
     data = collection.find_one({"date": mock_data.startingEntry["date"]})
+    dailyCalories = 0
     print(f"Journal for {data['date']}")
     for meal in data["meals"]:
-        foodEntries = []
-        totalCalories = 0
+        entriesInMeal = []
+        totalMealCalories = 0
         for food in meal["foods"]:
-            foodEntries.append(f"\t{food['name']}: {food['quantity']} {food['unit']} - {food['calories']} calories")
-            totalCalories += food["calories"]
-        print(f"{meal['name']} - {int(totalCalories)} calories")
-        print("\n".join(foodEntries))
+            entriesInMeal.append(f"\t{food['name']}: {food['quantity']} {food['unit']} - {food['calories']} calories")
+            totalMealCalories += food["calories"]
+        print(f"{meal['name']} - {totalMealCalories} calories")
+        print("\n".join(entriesInMeal))
+        dailyCalories += totalMealCalories
+    print(f"Total Calories: {dailyCalories}")
 @utilities.Debug_User_Input("Breakfast Blueberries 1 cup 55")
 def addFoodEntry(user_input):
     """
