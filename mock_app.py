@@ -17,7 +17,6 @@ args = parser.parse_args()
 #Using MongoDB Community as a mock database
 print("Connecting to database... at", uri)
 client = mongodb.MongoClient(uri)
-client._push_mock_data(mock_data.startingEntry)
 
 def app():
     print("App initialized")
@@ -79,25 +78,47 @@ def getFullJournal(user_input):
         dailyCalories += calories
     print(f"Total Calories: {dailyCalories}")
 
-@utilities.Debug_User_Input(f"Breakfast Blueberries 1 cup 55 {mock_data.startingEntry['date']}")
+@utilities.Debug_User_Input([f"{mock_data.startingEntry['date']} . Midnight"])
+def addMealEntry(user_input):
+    """
+    Adds a meal entry to the journal:
+        Input format <date> <meal_path> <meal_name> 
+    """
+    cmds = user_input.split()
+    if len(cmds) != 3:
+        print("Error: Invalid command format")
+        return
+    date, meal_path, meal_name = cmds
+    currentEntry = client.get_daily_journal(date)
+    meal = currentEntry.processMealPath(meal_path)
+    if meal is None:
+        currentEntry.addMeal(data_models.Meal(name = meal_name))
+    else:
+        meal.addEntry(data_models.MealEntry(type = data_models.MealEntryType.MEAL, foodOrMeal = data_models.Meal(name = meal_name)))
+    client.push_daily_jounral(date, currentEntry)
+
+@utilities.Debug_User_Input(f"{mock_data.startingEntry['date']} Midnight Blueberries 1 cup 55")
 def addFoodEntry(user_input):
     """
     Adds a food entry to the journal:
-        Input format <meal> <food> <quantity> <unit> <calories> <date>
+        Input format <date> <meal_path> <food> <quantity> <unit> <calories> 
     """
     cmds = user_input.split()
     if len(cmds) != 6:
         print("Error: Invalid command format")
         return
-    meal, food, quantity, unit, calories, date = cmds
+    date, meal_path, food, quantity, unit, calories = cmds
     quantity = int(quantity)
     calories = int(calories)
     
     entryForDate = client.get_daily_journal(date)
 
-    mealObject = entryForDate.getMealByName(meal)
-    if mealObject is None:
-        mealObject = data_models.Meal(meal)
+    try:
+        mealObject = entryForDate.processMealPath(meal_path)
+    except IndexError:
+        print("Error: Meal path invalid")
+        return
+    
     foodObject = data_models.Food(name = food, quantity = quantity, unit = unit, calories = calories)
     mealObject.addEntry(data_models.MealEntry(type = data_models.MealEntryType.FOOD, foodOrMeal = foodObject))
 
@@ -120,6 +141,7 @@ def error(user_input):
 commands = {
     "help": help,
     "summary": getDaySummary,
+    "add_to_meal": addMealEntry,
     "add_to_entry": addFoodEntry,
     "create_entry": createDailyEntry,
     "get_entry": getFullJournal,
@@ -127,6 +149,7 @@ commands = {
 if __name__ == "__main__":
     if args.test:
         print("Running in test mode")
+        client._push_mock_data(mock_data.startingEntry)
         for command in commands:
             print("Executing command:", command)
             mock_inputs = [""]

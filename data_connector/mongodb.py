@@ -11,12 +11,25 @@ class MongoClient():
             print(e)
         self.client = client
         self.db = client.get_database("mock_tracker")
+
+    def dates_with_entries(self) -> [str]:
+        """
+            Returns a list of dates with entries
+        """
+        day_entries = self.db.get_collection("dailyEntries")
+        return [entry["date"] for entry in day_entries.find({})]
+    def _clean_db(self):
+        """
+            Cleans the database
+        """
+        day_entries = self.db.get_collection("dailyEntries")
+        day_entries.delete_many({})
     def _push_mock_data(self, mock_data: data_models.DailyEntry):
         """
             Push mock data to the database
         """
+        self._clean_db()
         day_entries = self.db.get_collection("dailyEntries")
-        day_entries.delete_many({})
         if day_entries.count_documents({}) == 0:
             return day_entries.insert_one(mock_data)
     def get_daily_calories(self, date) -> {str: int}:

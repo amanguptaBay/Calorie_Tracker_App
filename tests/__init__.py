@@ -83,26 +83,16 @@ class DailyEntry(JsonInitializable):
             if meal.name == name:
                 return meal
         return None
-    def processMealPath (self, meal_path:str) -> Optional[Union[Meal, Food]]:
+    def processMealPath (self, meal_path:str) -> Union[Meal, Food, None]:
         """
             Given a meal path, returns the meal or food object it refers to in the daily entry
             Meal path format: <meal name>/<index>/.../<index>, meal entries can be further indexed, food items are atomics
-            Raises IndexError if the path is invalid, None if the path is valid but the meal or food item does not exist
         """
 
         meal_path = meal_path.split("/")
         mealName = meal_path.pop(0)
-        if mealName == "" or mealName == ".":
-            return None
         meal = self.getMealByName(mealName)
-        if meal is None:
-            raise IndexError("Parent meal not found")
         for ind, meal_path_index in enumerate(meal_path):
-            meal_path_index = meal_path_index.strip()
-            if meal_path_index == ".":
-                continue
-            if meal_path_index == "":
-                continue
             meal_path_index = int(meal_path_index)
             err = None
             try:
@@ -112,6 +102,7 @@ class DailyEntry(JsonInitializable):
                 err = IndexError("Meal path index out of bounds, trying to index a non-indexable object")
             if err is not None:
                 raise err
+            print(type(meal))
         return meal
 
     def addMeal(self, meal: Meal):
