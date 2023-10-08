@@ -7,19 +7,25 @@ class JsonSerializable:
     """
         A class that can be serialized to json
     """
+
+    def _toJson(self, obj):
+        """
+            Converts a object to Json.
+        """
+        if isinstance(obj, JsonSerializable):
+            return obj.toJson()
+        elif isinstance(obj, list):
+            return [self._toJson(entry) for entry in obj]
+        elif isinstance(obj, dict):
+            return {k: self._toJson(v) for k, v in obj.items()}
+        else:
+            return obj
+
     def toJson(self):
         output = {}
         for k, v in self.__dict__.items():
             if not k.startswith("_") and not callable(v):
-                if isinstance(v, JsonSerializable):
-                    output[k] = v.toJson()
-                elif isinstance(v, list):
-                    output[k] = []
-                    if len(v) > 0:
-                        for entry in v:
-                            output[k].append(entry.toJson() if isinstance(entry, JsonSerializable) else entry)
-                else:
-                    output[k] = v
+                output[k] = self._toJson(v)
         return output
 class JsonInitializable (JsonSerializable):
     """
@@ -53,9 +59,9 @@ class MealEntry (JsonInitializable):
     def toJson(self):
         #Object is a convenience property, actually a named sub-element of the entry object
         output = {
-            "type": self.type.toJson(),
+            "type": self._toJson(self.type),
         }
-        output.update(self.object.toJson())
+        output.update(self._toJson(self.object))
         return output
 
 class Meal(JsonInitializable):
