@@ -25,14 +25,31 @@ class MongoClient():
         """
         day_entries = self.db.get_collection("dailyEntries")
         data = day_entries.find_one({"date": date})
-        return list(day_entries.aggregate([
-            {"$match": {"date": date}},
-            {"$unwind": "$meals"},
-            #Brings meals to the top level (we want meals: total calories)
-            {"$replaceRoot": {"newRoot": "$meals"}},
-            #For each meal, keeps only the name and then computes the sum of calories
-            {"$project": {"_id": 0, "name": 1, "calories": {"$sum": "$foods.calories"}}}
-        ]))
+        if data is None:
+            print("Error: Daily journal not found")
+            return
+        data = data_models.DailyEntry.from_object(data)
+        workQueue = []
+        for meal in data.meals:
+            workQueue += [{"action":"process", "object": entry.object} for entry in meal.entries]
+            workQueue += [{"action":"store", "mealName" : meal.name}]
+
+        caloriesByMeal = {}
+        currentMealCalories = 0
+        while len(workQueue) > 0:
+            task = workQueue.pop(0)
+            action = task["action"]
+            if action == "store":
+                caloriesByMeal[task["mealName"]] = currentMealCalories
+                currentMealCalories = 0
+            elif action == "process":
+                object = task["object"]
+                if isinstance(object, data_models.Food):
+                    currentMealCalories += object.calories
+                elif isinstance(object, data_models.Meal):
+                    workQueue += [{"action":"process", "object": entry.object} for entry in object.entries]
+        return caloriesByMeal
+        
     def create_daily_journal(self, date):
         """
             Creates a new daily journal
@@ -42,14 +59,15 @@ class MongoClient():
         if data is not None:
             print("Error: Daily journal already exists")
             return
-        day_entries.insert_one(data_models.DailyEntry(date))
+        newEntry = data_models.DailyEntry(date)
+        day_entries.insert_one(newEntry.toJson())
     def get_daily_journal(self, date) -> data_models.DailyEntry:
         """
             Fetches and returns the daily journal
         """
         day_entries = self.db.get_collection("dailyEntries")
         data = day_entries.find_one({"date": date})
-        return data_models.DailyEntry(date, data["meals"])
+        return data_models.DailyEntry.from_object(data)
     def push_daily_jounral(self, date, data: data_models.DailyEntry):
         """
             Pushes the daily journal to the database

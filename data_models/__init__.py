@@ -5,15 +5,25 @@ from enum import Enum
 
 class JsonSerializable:
     def toJson(self):
-        return {k : v.toJson() 
-                if isinstance(v, JsonSerializable) 
-                else [entry.toJson() for entry in v] if isinstance(v, list) and isinstance(v[0], JsonSerializable) else v
-                
-                 for k, v in self.__dict__.items() 
-                 if not k.startswith("_") and not callable(v)}
+        output = {}
+        for k, v in self.__dict__.items():
+            if not k.startswith("_") and not callable(v):
+                if isinstance(v, JsonSerializable):
+                    output[k] = v.toJson()
+                elif isinstance(v, list):
+                    output[k] = []
+                    if len(v) > 0:
+                        for entry in v:
+                            output[k].append(entry.toJson() if isinstance(entry, JsonSerializable) else entry)
+                else:
+                    output[k] = v
+        return output
+    @classmethod
+    def from_object(self, *args, **kwargs):
+        return self(*args, **kwargs)
 
 class Food (JsonSerializable): 
-    def __init__(self, name: str, quantity: int, unit: str, calories: int):
+    def __init__(self,*args, name: str, quantity: int, unit: str, calories: int, **kwargs):
         self.name = name
         self.quantity = quantity
         self.unit = unit
@@ -22,7 +32,7 @@ class Food (JsonSerializable):
     def from_object(self, food: dict):
         if isinstance(food, Food):
             return food
-        return Food(food["name"], food["quantity"], food["unit"], food["calories"])
+        return Food(**food)
 
 class MealEntryType(Enum):
     FOOD = 0
