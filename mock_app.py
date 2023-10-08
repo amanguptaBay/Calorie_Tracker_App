@@ -3,16 +3,13 @@ import mock_data
 import utilities
 import data_models
 import data_connector.mongodb as mongodb
-import argparse
 import configparser
 
 config = configparser.ConfigParser()
 config.read("config.ini")
 uri = config.get("database", "uri")
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-t", "--test", help="run in test mode", action="store_true")
-args = parser.parse_args()
+
 
 #Using MongoDB Community as a mock database
 print("Connecting to database... at", uri)
@@ -147,21 +144,6 @@ commands = {
     "get_entry": getFullJournal,
 }
 if __name__ == "__main__":
-    if args.test:
-        print("Running in test mode")
-        client._push_mock_data(mock_data.startingEntry)
-        for command in commands:
-            print("Executing command:", command)
-            mock_inputs = [""]
-            try:
-                mock_inputs = commands[command].debug_user_input
-            except AttributeError:
-                pass
-            if isinstance(mock_inputs, str):
-                mock_inputs = [mock_inputs]
-            for input in mock_inputs:
-                print("\t Mock input:", input)
-                commands[command](input)
-    else:
-        print("Running in production mode")
-        app()
+    print("Running in production mode")
+    app()
+        
