@@ -59,7 +59,7 @@ class MongoClient():
         if data is not None:
             print("Error: Daily journal already exists")
             return
-        newEntry = data_models.DailyEntry(date)
+        newEntry = data_models.DailyEntry(date = date)
         day_entries.insert_one(newEntry.toJson())
     def get_daily_journal(self, date) -> data_models.DailyEntry:
         """

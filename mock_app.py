@@ -99,7 +99,7 @@ def addFoodEntry(user_input):
     if mealObject is None:
         mealObject = data_models.Meal(meal)
     foodObject = data_models.Food(name = food, quantity = quantity, unit = unit, calories = calories)
-    mealObject.addEntry(data_models.MealEntry(data_models.MealEntryType.FOOD, foodObject))
+    mealObject.addEntry(data_models.MealEntry(type = data_models.MealEntryType.FOOD, foodOrMeal = foodObject))
 
     client.push_daily_jounral(date, entryForDate)
 
