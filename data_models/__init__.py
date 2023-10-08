@@ -27,6 +27,9 @@ class JsonSerializable:
             if not k.startswith("_") and not callable(v):
                 output[k] = self._toJson(v)
         return output
+    
+    def __repr__(self):
+        return str(self.toJson())
 class JsonInitializable (JsonSerializable):
     """
         A class that can be initialized from a json object by passing it the object's dictionary representation.
@@ -90,12 +93,16 @@ class DailyEntry(JsonInitializable):
         mealName = meal_path.pop(0)
         meal = self.getMealByName(mealName)
         for ind, meal_path_index in enumerate(meal_path):
-            if meal is None:
-                return None
-            if meal.type != MealEntryType.MEAL:
-                return meal if ind == len(meal_path) - 1 else None
             meal_path_index = int(meal_path_index)
-            meal = meal.entries[meal_path_index].object
+            err = None
+            try:
+                meal = meal.entries[meal_path_index].object
+            except AttributeError:
+                #Trying to index a food, renames error to be easier to understand whats going on
+                err = IndexError("Meal path index out of bounds, trying to index a non-indexable object")
+            if err is not None:
+                raise err
+            print(type(meal))
         return meal
 
     def addMeal(self, meal: Meal):
