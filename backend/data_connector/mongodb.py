@@ -28,10 +28,8 @@ class MongoClient():
         """
             Push mock data to the database
         """
-        self._clean_db()
         day_entries = self.db.get_collection("dailyEntries")
-        if day_entries.count_documents({}) == 0:
-            return day_entries.insert_one(mock_data)
+        return day_entries.insert_one(mock_data.toJson())
     def get_daily_calories(self, date) -> {str: int}:
         """
         Returns the calories by meal for a date
@@ -91,4 +89,5 @@ class MongoClient():
             print("Error: Server error")
             print(pushEvent.raw_result)
             return
+        return True
     

@@ -1,0 +1,35 @@
+.journal-indentation-0 {
+  padding-left: 0px;
+}
+
+.journal-indentation-1 {
+  padding-left: 20px;
+}
+
+.journal-indentation-2 {
+  padding-left: 40px;
+}
+
+.journal-indentation-3 {
+  padding-left: 60px;
+}
+
+.inline{
+  display: inline-block;
+}
+
+.right-aligned{
+  float: right;
+}
+
+.left-aligned{
+  float: left;
+}
+
+.meal-header{
+  background-color: rgba(0, 0, 255, 0.5);
+}
+
+.journal-header{
+  background-color: rgba(0, 255, 0, 0.5);
+}

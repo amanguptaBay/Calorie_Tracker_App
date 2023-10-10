@@ -35,7 +35,7 @@ def help(user_input):
         print(f"{command}:")
         print(utilities.tabbedString(inspect.getdoc(commands[command]), 1))
 
-@utilities.Debug_User_Input([mock_data.startingEntry["date"],])
+@utilities.Debug_User_Input([mock_data.startingEntry1["date"],])
 def getDaySummary(user_input):
     """
     Summarized the day's meals by calories
@@ -60,7 +60,7 @@ def mealString(meal: data_models.Meal) -> [str, int]:
     outputString += ("\n".join(entriesInMeal))
     return outputString, totalMealCalories
 
-@utilities.Debug_User_Input([mock_data.startingEntry["date"],"2021-01-01"])
+@utilities.Debug_User_Input([mock_data.startingEntry1["date"],"2021-01-01"])
 def getFullJournal(user_input):
     date = user_input
     """
@@ -75,7 +75,7 @@ def getFullJournal(user_input):
         dailyCalories += calories
     print(f"Total Calories: {dailyCalories}")
 
-@utilities.Debug_User_Input([f"{mock_data.startingEntry['date']} . Midnight"])
+@utilities.Debug_User_Input([f"{mock_data.startingEntry1['date']} . Midnight"])
 def addMealEntry(user_input):
     """
     Adds a meal entry to the journal:
@@ -94,7 +94,7 @@ def addMealEntry(user_input):
         meal.addEntry(data_models.MealEntry(type = data_models.MealEntryType.MEAL, foodOrMeal = data_models.Meal(name = meal_name)))
     client.push_daily_jounral(date, currentEntry)
 
-@utilities.Debug_User_Input(f"{mock_data.startingEntry['date']} Midnight Blueberries 1 cup 55")
+@utilities.Debug_User_Input(f"{mock_data.startingEntry1['date']} Midnight Blueberries 1 cup 55")
 def addFoodEntry(user_input):
     """
     Adds a food entry to the journal:
