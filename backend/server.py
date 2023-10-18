@@ -3,7 +3,7 @@ import os
 import pathlib
 import logging
 
-import data_models
+import data_models.journal
 import data_connector.mongodb as mongodb
 import configparser
 import mock_data
@@ -22,9 +22,9 @@ base_dir = pathlib.Path.cwd()
 print("Connecting to database... at", uri)
 client = mongodb.MongoClient(uri)
 client._clean_db()
-client._push_mock_data(mock_data=data_models.JournalEntry.from_object(mock_data.startingEntry1))
-client._push_mock_data(mock_data=data_models.JournalEntry.from_object(mock_data.startingEntry2))
-
+client._push_mock_journal(mock_data=data_models.journal.JournalEntry.from_object(mock_data.startingEntry1))
+client._push_mock_journal(mock_data=data_models.journal.JournalEntry.from_object(mock_data.startingEntry2))
+client._push_mock_library(mock_data=data_models.library.Library.from_object(mock_data.mock_library_1))
 @app.route("/api/echo/<message>")
 def echo(message):
     return flask.jsonify({"message": message})
@@ -49,13 +49,13 @@ def get_daily_journal(date):
 
 @app.route("/api/daily/<date>", methods=["POST"])
 def create_daily_journal(date):
-    journal = data_models.JournalEntry.from_object(flask.request.get_json(force=True))
+    journal = data_models.journal.JournalEntry.from_object(flask.request.get_json(force=True))
     flag = client.push_daily_journal(journal)
     return flask.jsonify({"message": "Success" if flag else "Failure"})
 
 @app.route("/api/daily/<date>", methods=["PUT"])
 def update_daily_journal(date):
-    journal = data_models.JournalEntry.from_object(flask.request.get_json(force=True))
+    journal = data_models.journal.JournalEntry.from_object(flask.request.get_json(force=True))
     logging.info(f"Pushing journal: {journal}")
     flag = client.push_daily_journal(journal)
     return flask.jsonify({"message": "Success" if flag else "Failure"})

@@ -1,15 +1,14 @@
-import { useContext, useState } from "react";
-import { Food, emptyFoodObject } from './Food';
+import {useState } from "react";
+import { Food } from './Food';
 import { FoodAdder } from "./Food";
-import { CurrentDateContext } from "./contexts/Date";
 import {getModificationHandler} from "./jsonDataModifier"
 
 const emptyMealObject = { name: "", entries: [], type: "MEAL" };
 export const maxIndentationDepth = (depth) => Math.min(3, depth);
 
-export function Meal({ meal, indentation = 1 }) {
-  const currentDate = useContext(CurrentDateContext);
+export function Meal({ meal, indentation = 0 }) {
   const [additionMode, setAdditionMode] = useState(null);
+  const [editing, setEditing] = useState(false);
   const mealData = meal.jsonData;
 
   let computedIndentation = maxIndentationDepth(indentation);
@@ -31,14 +30,19 @@ export function Meal({ meal, indentation = 1 }) {
     }
   }
 
+  function handleModification(modifiedMealObject){
+    setEditing(false);
+    meal.onUpdate("Update", modifiedMealObject);
+  }
+
   
 
   function buildAdditionBar(){
     switch(additionMode){
       case "FOOD":
-        return <FoodAdder foodObject={{ ...emptyFoodObject }} updatedValuesCallback={handleFoodAddition}></FoodAdder>;
+        return <FoodAdder updatedValuesCallback={handleFoodAddition}></FoodAdder>;
       case "MEAL":
-        return <MealAdder mealObject={{ ...emptyMealObject }} updatedValuesCallback={handleMealAddition}></MealAdder>;
+        return <MealAdder updatedValuesCallback={handleMealAddition}></MealAdder>;
       default:
         return <>
             <button id="new-food-item" onClick={() => {setAdditionMode("FOOD")}}>Add Food</button>
@@ -54,10 +58,15 @@ export function Meal({ meal, indentation = 1 }) {
     meal.onUpdate("Update",newObject);
   }
 
-  return (<div className={`journal-indentation-${computedIndentation}`}>
+  return (<div className={computedIndentation > 0?`journal-indentation-${computedIndentation}`:""}>
     <div className="meal-header">
-      <h4 className="inline">{mealData.name} - {calorieCount} calories</h4>
-      <button className="inline right-aligned">:</button>
+      {
+        editing ?
+        <MealAdder mealObject = {{...mealData} } updatedValuesCallback={handleModification}></MealAdder>:
+        <h4 className="inline">{mealData.name} - {calorieCount} calories</h4>
+      }
+      
+      <button className="inline right-aligned" onClick={() => {setEditing(true)}}>:</button>
       <button className="inline right-aligned" onClick={() => meal.onUpdate("Delete", null)}>-</button>
     </div>
 

@@ -259,5 +259,41 @@ startingEntry2 = """
 
 """
 
+mock_library_1 = """
+{"name": "Global Library",
+ "contents": 
+ [{"name": "Eggs", "quantity": 2, "unit": "eggs", "calories": 100},
+  {"name": "Chicken", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Lettuce", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Tomato", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Cucumber", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Ranch", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Bread", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Peanut Butter", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Jelly", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Milk", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Cereal", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Oatmeal", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Banana", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Apple", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Orange", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Grapes", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Strawberries", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Blueberries", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Raspberries", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Blackberries", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Peach", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Pear", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Pineapple", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Mango", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Watermelon", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Cantaloupe", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Honeydew", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Avocado", "quantity": 2, "unit": "oz", "calories": 100},
+  {"name": "Carrot", "quantity": 2, "unit": "oz", "calories": 100}]
+  }
+"""
+
 startingEntry1 = json.loads(startingEntry1)
 startingEntry2 = json.loads(startingEntry2)
+mock_library_1 = json.loads(mock_library_1)

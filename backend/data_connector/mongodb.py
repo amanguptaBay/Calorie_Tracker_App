@@ -1,4 +1,5 @@
-import data_models
+import data_models.library
+import data_models.journal
 import pymongo
 
 class MongoClient():
@@ -22,14 +23,20 @@ class MongoClient():
         """
             Cleans the database
         """
-        day_entries = self.db.get_collection("dailyEntries")
-        day_entries.delete_many({})
-    def _push_mock_data(self, mock_data: data_models.JournalEntry):
+        self.db.get_collection("dailyEntries").delete_many({})
+        self.db.get_collection("library").delete_many({})
+    def _push_mock_journal(self, mock_data: data_models.journal.JournalEntry):
         """
             Push mock data to the database
         """
         day_entries = self.db.get_collection("dailyEntries")
         return day_entries.insert_one(mock_data.toJson())
+    def _push_mock_library(self, mock_data: data_models.library.Library):
+        """
+            Push mock data to the database
+        """
+        library = self.db.get_collection("library")
+        return library.insert_one(mock_data.toJson())
     def get_daily_calories(self, date) -> {str: int}:
         """
         Returns the calories by meal for a date
@@ -39,7 +46,7 @@ class MongoClient():
         if data is None:
             print("Error: Daily journal not found")
             return
-        data = data_models.JournalEntry.from_object(data)
+        data = data_models.journal.JournalEntry.from_object(data)
         workQueue = []
         for meal in data.meals:
             workQueue += [{"action":"process", "object": entry.object} for entry in meal.entries]
@@ -55,9 +62,9 @@ class MongoClient():
                 currentMealCalories = 0
             elif action == "process":
                 object = task["object"]
-                if isinstance(object, data_models.Food):
+                if isinstance(object, data_models.journal.Food):
                     currentMealCalories += object.calories
-                elif isinstance(object, data_models.Meal):
+                elif isinstance(object, data_models.journal.Meal):
                     workQueue += [{"action":"process", "object": entry.object} for entry in object.entries]
         return caloriesByMeal
         
@@ -70,16 +77,16 @@ class MongoClient():
         if data is not None:
             print("Error: Daily journal already exists")
             return
-        newEntry = data_models.JournalEntry(date = date)
+        newEntry = data_models.journal.JournalEntry(date = date)
         day_entries.insert_one(newEntry.toJson())
-    def get_daily_journal(self, date) -> data_models.JournalEntry:
+    def get_daily_journal(self, date) -> data_models.journal.JournalEntry:
         """
             Fetches and returns the daily journal
         """
         day_entries = self.db.get_collection("dailyEntries")
         data = day_entries.find_one({"date": date})
-        return data_models.JournalEntry.from_object(data)
-    def push_daily_journal(self, data: data_models.JournalEntry):
+        return data_models.journal.JournalEntry.from_object(data)
+    def push_daily_journal(self, data: data_models.journal.JournalEntry):
         """
             Pushes the daily journal to the database
         """
