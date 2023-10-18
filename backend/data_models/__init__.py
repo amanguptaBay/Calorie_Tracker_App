@@ -37,7 +37,12 @@ class JsonInitializable (JsonSerializable):
     """
     @classmethod
     def from_object(self, arg: Union[dict, "JsonSerializable"]):
-        return self(**arg) if isinstance(arg, dict) else arg
+        if isinstance(arg, dict):
+            return self(**arg)
+        elif isinstance(arg, self):
+            return arg
+        else:
+            raise TypeError("Trying to initialize with unusable type")
 
 class Food (JsonInitializable): 
     def __init__(self,*args, name: str, quantity: int, unit: str, calories: int, **kwargs):
@@ -74,7 +79,7 @@ class Meal(JsonInitializable):
     def addEntry(self, entry: MealEntry):
         self.entries.append(entry)
 
-class DailyEntry(JsonInitializable):
+class JournalEntry(JsonInitializable):
     def __init__(self,*args, date: str, meals: List[Meal] = [], **kwargs):
         self.date = date
         self.meals = [Meal.from_object(meal) if not isinstance(meal, Meal) else meal for meal in meals]

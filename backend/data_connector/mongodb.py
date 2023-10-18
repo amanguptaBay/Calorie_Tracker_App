@@ -24,7 +24,7 @@ class MongoClient():
         """
         day_entries = self.db.get_collection("dailyEntries")
         day_entries.delete_many({})
-    def _push_mock_data(self, mock_data: data_models.DailyEntry):
+    def _push_mock_data(self, mock_data: data_models.JournalEntry):
         """
             Push mock data to the database
         """
@@ -39,7 +39,7 @@ class MongoClient():
         if data is None:
             print("Error: Daily journal not found")
             return
-        data = data_models.DailyEntry.from_object(data)
+        data = data_models.JournalEntry.from_object(data)
         workQueue = []
         for meal in data.meals:
             workQueue += [{"action":"process", "object": entry.object} for entry in meal.entries]
@@ -70,24 +70,25 @@ class MongoClient():
         if data is not None:
             print("Error: Daily journal already exists")
             return
-        newEntry = data_models.DailyEntry(date = date)
+        newEntry = data_models.JournalEntry(date = date)
         day_entries.insert_one(newEntry.toJson())
-    def get_daily_journal(self, date) -> data_models.DailyEntry:
+    def get_daily_journal(self, date) -> data_models.JournalEntry:
         """
             Fetches and returns the daily journal
         """
         day_entries = self.db.get_collection("dailyEntries")
         data = day_entries.find_one({"date": date})
-        return data_models.DailyEntry.from_object(data)
-    def push_daily_jounral(self, date, data: data_models.DailyEntry):
+        return data_models.JournalEntry.from_object(data)
+    def push_daily_journal(self, data: data_models.JournalEntry):
         """
             Pushes the daily journal to the database
         """
         day_entries = self.db.get_collection("dailyEntries")
+        date = data.date
         pushEvent = day_entries.update_one({"date": date}, {"$set": data.toJson()})
         if pushEvent.modified_count == 0:
             print("Error: Server error")
             print(pushEvent.raw_result)
-            return
+            return False
         return True
     

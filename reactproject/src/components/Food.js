@@ -1,41 +1,32 @@
-import { useState } from "react";
-import { maxIndentationDepth, currentDate } from '../App';
-
-export function Food({ food, meal_path, refreshParentCallback, indentation = 0 }) {
+import { useContext, useState } from "react";
+import { maxIndentationDepth } from "./Meal";
+import { CurrentDateContext } from "./contexts/Date";
+export function Food({ food, indentation = 0}) {
   const [editing, setEditing] = useState(false);
-  const [foodObject, setFoodObject] = useState(food);
+  const foodObject = (food.jsonData);
+  const currentDate = useContext(CurrentDateContext);
   let computedIndentation = maxIndentationDepth(indentation);
 
-  function getFoodChanges(foodChanges) {
+  function onFoodChange(foodChanges) {
     setEditing(false);
-    const oldFoodObject = { ...foodObject };
-    const newFoodObject = { ...foodObject, ...foodChanges };
-    if (oldFoodObject !== newFoodObject) {
-      setFoodObject(newFoodObject);
-      fetch(`/api/daily/food/${currentDate}/${meal_path}`, {
-        method: "PUT",
-        body: JSON.stringify(newFoodObject),
-      }).catch((err) => {
-        //Rollback
-        console.log(err);
-        setFoodObject(oldFoodObject);
-      });
-    }
+    food.onUpdate("Update",{ ...foodObject, ...foodChanges });
   }
 
-  return (<div className={`journal-indentation-${computedIndentation}`} key={meal_path}>
+  return (<div className={`journal-indentation-${computedIndentation}`}>
 
     {editing ?
-      <div>
-        <FoodAdder foodObject={foodObject} updatedValuesCallback={getFoodChanges}></FoodAdder>
-      </div> :
-      <div>
+      <>
+        <FoodAdder foodObject={foodObject} updatedValuesCallback={onFoodChange}></FoodAdder>
+      </> :
+      <>
         <p className="inline">{foodObject.name}: {foodObject.calories} calories</p>
         <button className="inline right-aligned" onClick={() => setEditing(true)}>:</button>
-      </div>}
+        <button className="inline right-aligned" onClick={() => food.onUpdate("Delete", null)}>-</button>
+      </>}
   </div>);
-}export const emptyFoodObject = { name: "", calories: 0, quantity: 1, unit: "unit", type: "FOOD" };
-export function FoodAdder({ updatedValuesCallback, foodObject = { emptyFoodObject } }) {
+}
+export const emptyFoodObject = { name: "", calories: 0, quantity: 1, unit: "unit", type: "FOOD" };
+export function FoodAdder({ updatedValuesCallback, foodObject = emptyFoodObject}) {
   const [foodState, setFoodState] = useState(foodObject);
 
   function addFood() {

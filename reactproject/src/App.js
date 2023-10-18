@@ -1,50 +1,73 @@
 import logo from './logo.svg';
 import './App.css';
 import { useEffect, useState } from "react";
-import { Meal } from './components/Meal';
+import { Meal, MealAdder } from './components/Meal';
+import { useContext } from 'react';
+import { CurrentDateContext } from './components/contexts/Date';
+import {getModificationHandler} from "./components/jsonDataModifier"
 
 
-export const maxIndentationDepth = (depth) => Math.min(3,depth);
-//This is a awful system for keeping track of the current date, but it works for now
-//I know contexts exist, I just want to goto bed. Sorry future me :P
-export let currentDate = null;
-
-function Entry(props){
-  const date = props.date;
+function Entry({refreshCall}){
+  const date = useContext(CurrentDateContext);
   const [entry, setEntry] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getEntry();
-  }
-  ,[]);
+  },[date]);
 
   async function getEntry() {
-    const result = await fetch(`/api/daily/${date}`);
-    const json = await result.json();
-    console.log(json);
-    setEntry(json);
-    setLoading(false);
+    if(date != null){
+      const result = await fetch(`/api/daily/${date}`);
+      const json = await result.json();
+      console.log("JSON from Server")
+      console.log(json);
+      setEntry(json);
+      setLoading(false);
+  }
+  }
+
+  function handleNewMealsObjectFromChild(newMeals){
+    let newEntry = {...entry};
+    let oldEntry = {...entry};
+    newEntry.meals = [...newMeals];
+    console.log(`Updating entry to`)
+    console.log(newEntry)
+    setEntry(newEntry);
+    fetch(`/api/daily/${date}`, {
+      method: "PUT",
+      body: JSON.stringify(newEntry),
+    }).then((res) => {
+      console.log("Updated entry succesfully");
+      console.log(res);
+      refreshCall();
+    }).catch((err) => {
+      //Rollback
+      console.log(err);
+      setEntry(oldEntry);
+      });
   }
 
   if(loading){
-    return <div key = {date}>Loading...</div>
-  }
-  else if((entry.meals.length) > 0){
-    return (<div key = {date}>
-      {
-        entry.meals.map((meal) => 
-          <Meal refreshParentCallback = {props.refreshParentCallback} meal_path = {meal.name} key = {meal.name} className = "meal-details" meal = {meal}></Meal>
-        )
-      }
-    </div>);
+    return <div>Loading...</div>
   }
   else{
     return (<div>
-      <h1>Entry</h1>
-      <p>No meals for this date</p>
+      {
+        entry.meals.length > 0?
+        entry.meals.map((meal,index) => 
+          <Meal className = "meal-details" key = {meal.name}  meal = {{"jsonData": meal, "onUpdate": getModificationHandler(entry.meals, index, handleNewMealsObjectFromChild)}}></Meal>
+        ):
+        <p> No meals</p>
+      }
+
+      <p>Add Meal:</p>
+      <MealAdder updatedValuesCallback = {
+        (newMeal) => getModificationHandler(entry.meals, entry.meals.length, handleNewMealsObjectFromChild)("Insert", newMeal)
+      }></MealAdder>
     </div>);
   }
+
 
 }
 
@@ -55,7 +78,6 @@ function Dates(){
 
   function setActiveDate(date){
     setActiveDate_(date);
-    currentDate = date;
   }
 
   useEffect(() => {
@@ -67,7 +89,10 @@ function Dates(){
     const json = await result.json();
     console.log(json);
     setDates(json);
-    setActiveDate(json[0]);
+    if(activeDate === null)
+    {
+      setActiveDate(json[0]);
+    }
     setLoading(false);
   }
 
@@ -94,20 +119,22 @@ function Dates(){
           </li>)}
         </ul>
       </section>
-      <section name = "journal">
-        {activeDate !== null?
-        <div>
-            <div className = "journal-header">
-              <h2 className = "inline">Journal for {activeDate}</h2>
-              <button className = "inline right-aligned" onClick = {refreshEntry}>Refresh</button>
-            </div>
-            <Entry refreshParentCallback={refreshEntry} key={activeDate} date={activeDate}></Entry>
-        </div>:
-        <div>
-          <h2>Journal</h2>
-          <p>No date selected</p>
-        </div>}
-      </section>
+      <CurrentDateContext.Provider value={activeDate}>
+        <section name = "journal">
+            {activeDate !== null?
+            <div>
+                <div className = "journal-header">
+                <h2 className = "inline">Journal for {activeDate}</h2>
+                <button className = "inline right-aligned" onClick = {refreshEntry}>Refresh</button>
+                </div>
+                <Entry refreshCall = {refreshEntry}></Entry>
+            </div>:
+            <div>
+            <h2>Journal</h2>
+            <p>No date selected</p>
+            </div>}
+        </section>
+    </CurrentDateContext.Provider>
       
     </div>
   }

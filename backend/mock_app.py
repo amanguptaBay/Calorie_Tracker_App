@@ -92,7 +92,7 @@ def addMealEntry(user_input):
         currentEntry.addMeal(data_models.Meal(name = meal_name))
     else:
         meal.addEntry(data_models.MealEntry(type = data_models.MealEntryType.MEAL, foodOrMeal = data_models.Meal(name = meal_name)))
-    client.push_daily_jounral(date, currentEntry)
+    client.push_daily_journal(date, currentEntry)
 
 @utilities.Debug_User_Input(f"{mock_data.startingEntry1['date']} Midnight Blueberries 1 cup 55")
 def addFoodEntry(user_input):
@@ -119,7 +119,7 @@ def addFoodEntry(user_input):
     foodObject = data_models.Food(name = food, quantity = quantity, unit = unit, calories = calories)
     mealObject.addEntry(data_models.MealEntry(type = data_models.MealEntryType.FOOD, foodOrMeal = foodObject))
 
-    client.push_daily_jounral(date, entryForDate)
+    client.push_daily_journal(date, entryForDate)
 
 @utilities.Debug_User_Input("2021-01-01")
 def createDailyEntry(user_input):
